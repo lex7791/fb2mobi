@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <asmv1:assembly manifestVersion="1.0" xsi:schemaLocation="urn:schemas-microsoft-com:asm.v1 assembly.adaptive.xsd" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns="urn:schemas-microsoft-com:asm.v2" xmlns:asmv1="urn:schemas-microsoft-com:asm.v1" xmlns:asmv2="urn:schemas-microsoft-com:asm.v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <asmv1:assemblyIdentity name="fb2mobi.exe" version="1.0.0.0" publicKeyToken="0000000000000000" language="neutral" processorArchitecture="msil" type="win32" />
+  <asmv1:assemblyIdentity name="fb2mobi.exe" version="1.0.0.0" publicKeyToken="0000000000000000" language="neutral" processorArchitecture="x86" type="win32" />
   <application />
   <entryPoint>
-    <assemblyIdentity name="fb2mobi" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
+    <assemblyIdentity name="fb2mobi" version="1.0.0.0" language="neutral" processorArchitecture="x86" />
     <commandLine file="fb2mobi.exe" parameters="" />
   </entryPoint>
   <trustInfo>
@@ -28,13 +28,13 @@
   </dependency>
   <dependency>
     <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="fb2mobi.exe" size="20480">
-      <assemblyIdentity name="fb2mobi" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
+      <assemblyIdentity name="fb2mobi" version="1.0.0.0" language="neutral" processorArchitecture="x86" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
-        <dsig:DigestValue>Dka8SuYa0wjJCSI5Bb/J4m/ivYY=</dsig:DigestValue>
+        <dsig:DigestValue>mzN9jTefSxux/iOE2tEP3ao1QNM=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

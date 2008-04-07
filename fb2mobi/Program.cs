@@ -116,7 +116,7 @@ namespace fb2mobi
             char[] lat = new char[] {
                     'a', 'b', 'v', 'g', 'd', 'e', 'j', 'z', 'i', 'y'
                   , 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u'
-                  , 'f', 'h', 'c', 'h', 's', 's', 'x', 'x', 'e', 'y', 'a'
+                  , 'f', 'h', 'c', 'h', 's', 's', 'x', 'x', 'e', 'u', 'y'
                   , '_', '_', '_'};
             string name = "";
             for (int idx = 0; idx < file.Length; ++idx ){

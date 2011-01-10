@@ -6,6 +6,10 @@ using System.Xml;
 using System.Xml.Xsl;
 using System.Xml.XPath;
 
+using System.Diagnostics;
+using System.ComponentModel;
+using System.Threading;
+
 namespace fb2mobi
 {
     class SXParser
@@ -18,13 +22,18 @@ namespace fb2mobi
         [STAThread]
         static void Main(string[] args)
         {
-            Directory.SetCurrentDirectory(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]));
-            if(args.Length == 0){
+            string PathToExecute = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+            if(PathToExecute.Trim().Length > 0)
+                Directory.SetCurrentDirectory(PathToExecute);
+
+            if (args.Length == 0)
+            {
                 Console.WriteLine("Usage: fb2mobi <file.fb2> [,<body.xsl> [,<opf.xsl>]]\n");
                 return;
             }
             else
                 filename = args[0];
+
             if(!File.Exists(filename)){
                 Console.WriteLine("File: \"" + filename + "\" not found\n");
                 return;
@@ -58,8 +67,8 @@ namespace fb2mobi
             try
             {
                 sp.saveImages();
-                sp.translate(opfxsl, bookname+ ".opf");
                 sp.translate(bodyxsl, "index.html");
+                sp.translate(opfxsl, bookname+ ".opf");
             }
             catch (XmlException e)
             {
@@ -72,13 +81,13 @@ namespace fb2mobi
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.CreateNoWindow = true;
-            process.StartInfo.FileName = "mobigen.exe";
-            process.StartInfo.Arguments = "-s0 -c2 -unicode -nomin \"" + basepath + bookname + ".opf\"";
+            process.StartInfo.FileName = "kindlegen.exe";
+            process.StartInfo.Arguments = "-c2 -unicode -nomin \"" + basepath + bookname + ".opf\"";
             process.Start();
 
             string str;
             while ((str = process.StandardOutput.ReadLine()) != null)
-                if(str.Length > 0)
+                if (str.Length > 0)
                     Console.WriteLine(str);
 
             bookname += ".mobi";
@@ -86,6 +95,8 @@ namespace fb2mobi
             {
                 File.Move(basepath + bookname, rootpath + "\\" + bookname);
                 Console.WriteLine("Output: " + basepath);
+                Console.WriteLine("");
+                Console.WriteLine("Book: " + rootpath + "\\" + bookname);
             }
 
         }
@@ -111,12 +122,12 @@ namespace fb2mobi
             char[] rus = new char[] {
                     'à', 'á', 'â', 'ã', 'ä', 'å', 'æ', 'ç', 'è', 'é'
                   , 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ð', 'ñ', 'ò', 'ó'
-                  , 'ô', 'õ', 'ö', '÷', 'ø', 'ù', 'ü', 'ú', 'ý', 'þ', 'ÿ'
+                  , 'ô', 'õ', 'ö', '÷', 'ø', 'ù', 'û', 'ý', 'þ', 'ÿ'
                   , '\\',':', '?'};
             char[] lat = new char[] {
                     'a', 'b', 'v', 'g', 'd', 'e', 'j', 'z', 'i', 'y'
                   , 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u'
-                  , 'f', 'h', 'c', 'h', 's', 's', 'x', 'x', 'e', 'u', 'y'
+                  , 'f', 'h', 'c', 'h', 's', 's', 'i', 'e', 'u', 'y'
                   , '_', '_', '_'};
             string name = "";
             for (int idx = 0; idx < file.Length; ++idx ){
@@ -179,6 +190,8 @@ namespace fb2mobi
             writer.Formatting = Formatting.Indented;
             
             xslt.Transform(reader, null, writer, null);
+            
+            writer.Close();
         }
     }
 }

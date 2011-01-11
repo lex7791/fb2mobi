@@ -24,9 +24,9 @@
 					</dc:Title>
 					<xsl:for-each select="//fb:description/fb:title-info/fb:author">
 						<dc:Creator file-as="{fb:last-name}, {fb:first-name}" role="aut">
+							<xsl:value-of select="fb:last-name"/><xsl:text>&#32;</xsl:text>
 							<xsl:value-of select="fb:first-name"/><xsl:text>&#32;</xsl:text>
-							<xsl:value-of select="fb:middle-name"/><xsl:text>&#32;</xsl:text>
-							<xsl:value-of select="fb:last-name"/>
+							<xsl:value-of select="fb:middle-name"/>
 						</dc:Creator>
 					</xsl:for-each>
 					<xsl:if test="//fb:description/fb:title-info/fb:date/@value">
@@ -34,6 +34,9 @@
 							<xsl:value-of select="//fb:description/fb:title-info/fb:date/@value"/>
 						</dc:Date>
 					</xsl:if>
+					<dc:Subject>
+						<xsl:value-of select="//fb:description/fb:title-info/fb:genre"/>
+					</dc:Subject> 
 					<dc:Identifier id="DOI">
 						<xsl:choose>
 							<xsl:when test="//fb:description/fb:document-info/fb:id and //fb:description/fb:document-info/fb:id != ''"><xsl:value-of select="//fb:description/fb:document-info/fb:id"/></xsl:when>

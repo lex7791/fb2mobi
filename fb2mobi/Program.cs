@@ -10,65 +10,63 @@ using System.Diagnostics;
 using System.ComponentModel;
 using System.Threading;
 
+using CommandLine.Utility;
+
 namespace fb2mobi
 {
     class SXParser
     {
-        private static string filename;
-        private static string opfxsl;
-        private static string bodyxsl;
-        private static string basepath;
+        private static string kindlegen = "kindlegen.exe";
+        private static string opfxsl    = "FB2_2_opf.xsl";
+        private static string bodyxsl   = "FB2_2_xhtml.xsl";
+
+        private int ErorrLevel;
+
+        Arguments CommandLine;
+
+        public string basepath;
+        public string rootpath;
+        public string filename;
+        public string bookname;
 
         [STAThread]
         static void Main(string[] args)
         {
+            Console.WriteLine("FB2mobi v 1.2.0 Copyright (c) 2008-2011 Rakunov Alexander 2011-01-12");
+            Console.WriteLine("Project home: http://code.google.com/p/fb2mobi/\n");
+
             string PathToExecute = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
             if(PathToExecute.Trim().Length > 0)
                 Directory.SetCurrentDirectory(PathToExecute);
-
-            if (args.Length == 0)
-            {
-                Console.WriteLine("Usage: fb2mobi <file.fb2> [,<body.xsl> [,<opf.xsl>]]\n");
-                return;
-            }
-            else
-                filename = args[0];
-
-            if(!File.Exists(filename)){
-                Console.WriteLine("File: \"" + filename + "\" not found\n");
-                return;
-            }
-            bodyxsl = "FB2_2_xhtml.xsl";
-            if (args.Length > 1)
-                bodyxsl = args[1];
             
-            opfxsl = "FB2_2_opf.xsl";
-            if (args.Length > 2)
-                opfxsl = args[2];
-
-            SXParser sp = new SXParser();
-
-            string rootpath = Path.GetDirectoryName(Path.GetFullPath(filename));
-            string basename = sp.getBookName(sp.transliteName(Path.GetFileName(filename)));
-            string bookname;
-            try
-            {
-                bookname = sp.checkFile(rootpath, basename);
-                Directory.CreateDirectory(rootpath + "\\" + bookname);
+            if(!File.Exists(kindlegen)){
+                Console.WriteLine("File: \"" + kindlegen + "\" not found\n");
+                return;
             }
-            catch (Exception )
-            {
-                rootpath = Path.GetTempPath();
-                bookname = sp.checkFile(rootpath, basename);
-                Directory.CreateDirectory(rootpath + "\\" + bookname);
-            }
-            basepath = rootpath + "\\" + bookname + "\\";
 
+            if(args.Length == 0){
+                print_usage();
+                return;
+            }
+
+            Arguments CommandLine = new Arguments(args);
+
+            if (CommandLine["?"] == "true" || CommandLine["help"] == "true" || CommandLine["h"] == "true")
+            {
+                print_usage();
+                return;
+            }
+
+            SXParser sp = new SXParser(CommandLine);
+
+            if (sp.Error())
+                return;
+            
             try
             {
                 sp.saveImages();
                 sp.translate(bodyxsl, "index.html");
-                sp.translate(opfxsl, bookname+ ".opf");
+                sp.translate(opfxsl, sp.bookname+ ".opf");
             }
             catch (XmlException e)
             {
@@ -81,8 +79,16 @@ namespace fb2mobi
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.CreateNoWindow = true;
-            process.StartInfo.FileName = "kindlegen.exe";
-            process.StartInfo.Arguments = "-c2 -unicode -nomin \"" + basepath + bookname + ".opf\"";
+            process.StartInfo.FileName = kindlegen;
+
+            string KindleGenArguments = "-unicode -nomin";
+            if (CommandLine["nc"] == "true")
+                KindleGenArguments += " -c0";
+            else
+                KindleGenArguments += " -c2";
+            KindleGenArguments += " \"" + sp.basepath + sp.bookname + ".opf\"";
+            process.StartInfo.Arguments = KindleGenArguments;
+
             process.Start();
 
             string str;
@@ -90,15 +96,98 @@ namespace fb2mobi
                 if (str.Length > 0)
                     Console.WriteLine(str);
 
-            bookname += ".mobi";
-            if (File.Exists(basepath + bookname))
+            string bookname = sp.bookname + ".mobi";
+            if (File.Exists(sp.basepath + bookname))
             {
-                File.Move(basepath + bookname, rootpath + "\\" + bookname);
-                Console.WriteLine("Output: " + basepath);
-                Console.WriteLine("");
-                Console.WriteLine("Book: " + rootpath + "\\" + bookname);
+                File.Move(sp.basepath + bookname, sp.rootpath + "\\" + bookname);
+                Console.WriteLine("Output: " + sp.basepath + "\n");
+                Console.WriteLine("Book: " + sp.rootpath + "\\" + bookname);
             }
 
+        }
+
+        public SXParser(Arguments args)
+        {
+            CommandLine = args;
+
+            ErorrLevel = 0;
+
+            filename = CommandLine[0];
+            rootpath = "";
+            basepath = "";
+            bookname = "";
+
+            string basename = "";
+
+            if (!File.Exists(filename))
+            {
+                Console.WriteLine("File: \"" + filename + "\" not found\n");
+                ErorrLevel = 1;
+                return;
+            }
+
+            if(CommandLine[0].Length == 0){
+                rootpath = Path.GetDirectoryName(Path.GetFullPath(CommandLine[0]));
+                basename = Path.GetFileName(CommandLine[0]);
+                
+                if(Directory.Exists(rootpath))
+                    rootpath = "";
+            }
+
+            if(rootpath.Length == 0)
+                rootpath = Path.GetDirectoryName(Path.GetFullPath(filename));
+            
+            if(basename.Length == 0){
+                basename = Path.GetFileName(filename);
+
+                if(CommandLine["kf"] != "true"){
+                    // get book name
+                    XmlDocument dd = new XmlDocument();
+                    dd.Load(filename);
+                    XmlNode root = dd["FictionBook"]["description"], data;
+                    if ((data = root["title-info"])!= null){
+                        data = data["book-title"];
+                        if (data != null){
+                            string val = data.InnerText;
+                            if (val.Length > 0)
+                                basename = val;
+                        }
+                    }
+                }
+            }
+            
+            if(CommandLine["nt"] != "true")
+                basename = transliteName(basename);
+            
+
+            try
+            {
+                bookname = checkFile(rootpath, basename);
+                Directory.CreateDirectory(rootpath + "\\" + bookname);
+            }
+            catch (Exception )
+            {
+                rootpath = Path.GetTempPath();
+                bookname = checkFile(rootpath, basename);
+                Directory.CreateDirectory(rootpath + "\\" + bookname);
+            }
+
+            basepath = rootpath + "\\" + bookname + "\\";
+        
+        }
+
+        public bool Error()
+        {
+            return ErorrLevel == 0 ? false : true;
+        }
+
+        static void print_usage()
+        { 
+                Console.WriteLine("Usage: fb2mobi <file.fb2> [-nc] [-nt] [-o\"OutPutFileName\"]\n");
+                Console.WriteLine("\t -nc \t No compress output file. Increase speed and size :-)");
+                Console.WriteLine("\t -kf \t Keep file name.");
+                Console.WriteLine("\t -nt \t No translite output file. Save the file name unchanged");
+                Console.WriteLine("\t -o\"OutPutFileName\" \t Set output file name");
         }
 
         string checkFile(string dir, string file)
@@ -143,24 +232,6 @@ namespace fb2mobi
                     break;
             }
             return name;
-        }
-
-        string getBookName(string defname)
-        {
-            XmlDocument dd = new XmlDocument();
-            dd.Load(filename);
-            XmlNode root = dd["FictionBook"]["description"], data;
-            if ((data = root["title-info"])!= null)
-            {
-                data = data["book-title"];
-                if (data != null)
-                {
-                    string val = data.InnerText;
-                    if (val.Length > 0)
-                        return transliteName(val);
-                }
-            }
-            return defname;
         }
 
         void saveImages()

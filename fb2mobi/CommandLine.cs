@@ -2,107 +2,119 @@
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 
-// based on
-//http://www.codeproject.com/KB/recipes/command_line.aspx
-
 namespace CommandLine.Utility
 {
-    /// <summary>
-
-    /// Arguments class
-
-    /// </summary>
-
+    // Based on
+    //http://www.codeproject.com/KB/recipes/command_line.aspx
+    
     public class Arguments
     {
-        // Variables
-
         private StringDictionary Named;
         private StringCollection Unnamed;
 
-        // Constructor
-
+        // Valid parameters forms:
+        // {-,/,--}param{ ,=,:}((",')value(",'))
+        // Examples: 
+        // -param1 value1 --param2 /param3:"Test-:-work" 
+        //   /param4=happy -param5 '--=nice=--'
         public Arguments(string[] Args)
         {
-
             Named = new StringDictionary();
             Unnamed = new StringCollection();
 
-            Regex Spliter = new Regex(@"^-{1,2}|^/|=|:",
-                RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            // Define -, --, /, : and = as valid delimiters.  Ignore : and = if enclosed in quotes.
+            Regex validDelims = new Regex(@"^-{1,2}|^/|[^['""]?.*]=['""]?$|[^['""]?.*]:['""]?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-            Regex Remover = new Regex(@"^['""]?(.*?)['""]?$",
-                RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            // Define anything enclosed with double quotes as a match.  We'll use this to replace
+            // the entire string with only the part that matches (everything but the quotes)
+            Regex quotedString = new Regex(@"^['""]?(.*?)['""]?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-            string Parameter = null;
-            string[] Parts;
+            string currentParam = null;
+            string[] parts;
 
-            // Valid parameters forms:
-
-            // {-,/,--}param{ ,=,:}((",')value(",'))
-
-            // Examples: 
-
-            // value1 --param2 /param3:"Test-:-work" 
-
-            //   /param4=happy -param5 '--=nice=--'
-
-            foreach (string Txt in Args)
+            foreach (string arg in Args)
             {
-                // Look for new parameters (-,/ or --) and a
+                // Apply validDelims to current arg to see how many significant characters were present
+                // We're limiting to 3 to forcefully ignore any characters in the parameter VALUE
+                // that would normally be used as a delimiter
+                parts = validDelims.Split(arg, 3);
 
-                // possible enclosed value (=,:)
-
-                Parts = Spliter.Split(Txt, 3);
-
-                switch (Parts.Length)
+                switch (parts.Length)
                 {
-                    case 1: // Only annamed value
-                        // Remove possible enclosing characters (",')
-                        Parameter = Remover.Replace(Parts[0], "$1");
-                        if (!Named.ContainsKey(Parameter))
+                    // no special characters present.  we assume this means that this part
+                    // represents a value to the previously provided parameter.
+                    // For example, if we have: "--MyTestArg myValue"
+                    // currentParam would currently be set to "--MyTestArg"
+                    // parts[0] would hold "myValue", to be assigned to MyTestArg
+                    case 1:
+                        if (currentParam != null)
                         {
-                            Named.Add(Parameter, Parameter);
-                            Unnamed.Add(Parameter);
+                            if (!Named.ContainsKey(currentParam))
+                                Named.Add(currentParam, quotedString.Replace(parts[0], "$1"));
+
+                            currentParam = null;
                         }
-
-                        Parameter = null;
-
+                        else
+                        {
+                            Unnamed.Add(quotedString.Replace(parts[0], "$1"));
+                        }
                         break;
 
-                    case 2: // With no value, set it to true.
+                    // One split ocurred, meaning we found a parameter delimiter
+                    // at the start of arg, but nothing to denote a value.
+                    // example: --MyParam
+                    case 2:
+                        // We already had a parameter with no value last time through the loop.
+                        // That means we have no explicit value to give currentParam. We'll default it to "true"
+                        if (currentParam != null && !Named.ContainsKey(currentParam))
+                            Named.Add(currentParam, "true");
 
-                        if (!Named.ContainsKey(Parts[1]))
-                            Named.Add(Parts[1], "true");
-                        
+                        // Store our value-less param and grab the next arg to see if it has our value
+                        // parts[0] only contains the opening delimiter -, --, or /, 
+                        // so we go after parts[1] for the actual param name
+                        currentParam = parts[1];
                         break;
 
-                    case 3: // Parameter name with value
+                    // Two splits occurred.  We found a starting parameter delimiter,
+                    // a parameter name, and another delimiter denoting a value for this parameter
+                    // Example: --MyParam=MyValue   or   --MyParam:MyValue
+                    case 3:
+                        // We already had a parameter with no value last time through the loop.
+                        // That means we have no explicit value to give currentParam. We'll default it to "true"
+                        if (currentParam != null && !Named.ContainsKey(currentParam))
+                            Named.Add(currentParam, "true");
 
-                        if (!Named.ContainsKey(Parts[1]))
-                        {
-                            // Remove possible enclosing characters (",')
-                            Parts[2] = Remover.Replace(Parts[2], "$1");
-                            Named.Add(Parts[1], Parts[2]);
-                        }
+                        // Store the good param name
+                        currentParam = parts[1];
 
+                        // Ignores parameters that have already been presented, not thrilled about this approach...
+                        if (!Named.ContainsKey(currentParam))
+                            Named.Add(currentParam, quotedString.Replace(parts[2], "$1"));
+
+                        // Reset currentParam, we already have both parameter and value for this arg
+                        currentParam = null;
                         break;
                 }
             }
+
+            // Final cleanup, we may still have a parameter at the end of the args string that didn't get a value
+            if (currentParam != null)
+            {
+                if (!Named.ContainsKey(currentParam))
+                    Named.Add(currentParam, "true");
+            }
+
         }
-
-        // Retrieve a parameter value if it exists 
-
-        // (overriding C# indexer property)
 
         public string this[string Param]
         {
             get
             {
-                return (Named[Param]);
+                string ret = Named[Param];
+                return (ret == null ? "" : ret);
             }
         }
-        
+
         public string this[int NParam]
         {
             get

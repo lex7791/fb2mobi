@@ -32,7 +32,7 @@ namespace fb2mobi
         [STAThread]
         static void Main(string[] args)
         {
-            Console.WriteLine("FB2mobi v 1.2.0 Copyright (c) 2008-2011 Rakunov Alexander 2011-01-12");
+            Console.WriteLine("FB2mobi v 2.0.0 Copyright (c) 2008-2011 Rakunov Alexander 2011-01-16");
             Console.WriteLine("Project home: http://code.google.com/p/fb2mobi/\n");
 
             string PathToExecute = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
@@ -48,7 +48,6 @@ namespace fb2mobi
                 print_usage();
                 return;
             }
-
             Arguments CommandLine = new Arguments(args);
 
             if (CommandLine["?"] == "true" || CommandLine["help"] == "true" || CommandLine["h"] == "true")
@@ -60,13 +59,15 @@ namespace fb2mobi
             SXParser sp = new SXParser(CommandLine);
 
             if (sp.Error())
+            {
                 return;
+            }
             
             try
             {
                 sp.saveImages();
-                sp.translate(bodyxsl, "index.html");
-                sp.translate(opfxsl, sp.bookname+ ".opf");
+                sp.transform(bodyxsl, "index.html");
+                sp.transform(opfxsl, sp.bookname + ".opf");
             }
             catch (XmlException e)
             {
@@ -103,7 +104,6 @@ namespace fb2mobi
                 Console.WriteLine("Output: " + sp.basepath + "\n");
                 Console.WriteLine("Book: " + sp.rootpath + "\\" + bookname);
             }
-
         }
 
         public SXParser(Arguments args)
@@ -126,19 +126,33 @@ namespace fb2mobi
                 return;
             }
 
-            if(CommandLine[0].Length == 0){
-                rootpath = Path.GetDirectoryName(Path.GetFullPath(CommandLine[0]));
-                basename = Path.GetFileName(CommandLine[0]);
-                
-                if(Directory.Exists(rootpath))
-                    rootpath = "";
+            string wd = CommandLine["w"];
+            if (wd.Length != 0)
+                if (Directory.Exists(wd))
+                    rootpath = wd;
+
+            string of = CommandLine["o"];
+            if (of.Length != 0){
+                try
+                {
+                    basename = Path.GetFileNameWithoutExtension(of);
+
+                    wd = Path.GetDirectoryName(of);
+                    if (wd.Length != 0)
+                        if (Directory.Exists(wd))
+                            rootpath = wd;
+                }
+                catch (Exception)
+                {
+                    basename = "";
+                }
             }
 
             if(rootpath.Length == 0)
                 rootpath = Path.GetDirectoryName(Path.GetFullPath(filename));
             
             if(basename.Length == 0){
-                basename = Path.GetFileName(filename);
+                basename = Path.GetFileNameWithoutExtension(filename);
 
                 if(CommandLine["kf"] != "true"){
                     // get book name
@@ -182,12 +196,13 @@ namespace fb2mobi
         }
 
         static void print_usage()
-        { 
-                Console.WriteLine("Usage: fb2mobi <file.fb2> [-nc] [-nt] [-o\"OutPutFileName\"]\n");
-                Console.WriteLine("\t -nc \t No compress output file. Increase speed and size :-)");
-                Console.WriteLine("\t -kf \t Keep file name.");
-                Console.WriteLine("\t -nt \t No translite output file. Save the file name unchanged");
-                Console.WriteLine("\t -o\"OutPutFileName\" \t Set output file name");
+        {
+            Console.WriteLine("Usage: fb2mobi <file.fb2> {-,/,--}param[{ ,=,:}((\",')value(\",'))]");
+            Console.WriteLine("\t -nc \t No compress output file. Increase speed and size :-)");
+            Console.WriteLine("\t -kf \t Keep source file name, default output file name is a book name.");
+            Console.WriteLine("\t -nt \t No translite output file. Save the file name unchanged");
+            Console.WriteLine("\t -w \"WorkDir\" \t Set output work dir");
+            Console.WriteLine("\t -o \"FileName\" \t Set output file name");
         }
 
         string checkFile(string dir, string file)
@@ -212,12 +227,12 @@ namespace fb2mobi
                     'à', 'á', 'â', 'ã', 'ä', 'å', 'æ', 'ç', 'è', 'é'
                   , 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ð', 'ñ', 'ò', 'ó'
                   , 'ô', 'õ', 'ö', '÷', 'ø', 'ù', 'û', 'ý', 'þ', 'ÿ'
-                  , '\\',':', '?'};
+                  , '\\',':', '/', '?', '*', ' '};
             char[] lat = new char[] {
                     'a', 'b', 'v', 'g', 'd', 'e', 'j', 'z', 'i', 'y'
                   , 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u'
-                  , 'f', 'h', 'c', 'h', 's', 's', 'i', 'e', 'u', 'y'
-                  , '_', '_', '_'};
+                  , 'f', 'h', 'c', 'h', 's', 's', 'i', 'e', 'u', 'a'
+                  , '_', '_', '_', '_', '_', '_'};
             string name = "";
             for (int idx = 0; idx < file.Length; ++idx ){
                 char ch = char.ToLower(file[idx]);
@@ -250,7 +265,7 @@ namespace fb2mobi
             }
         }
 
-        void translate(string xsl, string name)
+        void transform(string xsl, string name)
         {
             XmlTextReader reader = new XmlTextReader(filename);
 

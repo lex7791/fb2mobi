@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 
 namespace CommandLine.Utility
@@ -24,6 +23,7 @@ namespace CommandLine.Utility
 
             // Define -, --, /, : and = as valid delimiters.  Ignore : and = if enclosed in quotes.
             Regex validDelims = new Regex(@"^-{1,2}|^/|[^['""]?.*]=['""]?$|[^['""]?.*]:['""]?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            //Regex validDelims = new Regex(@"^-{1,2}|^/|=|:", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
             // Define anything enclosed with double quotes as a match.  We'll use this to replace
             // the entire string with only the part that matches (everything but the quotes)

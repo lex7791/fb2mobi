@@ -17,6 +17,7 @@ namespace fb2mobi
         string bookname_;
         string outputdir_;
         string inputFile_;
+        string workDir_;
 
         public static void print_usage()
         {
@@ -41,10 +42,7 @@ namespace fb2mobi
 
         public string getWorkDir()
         {
-            string ret = outputdir_;
-            ret += bookname_;
-            ret += "\\";
-            return ret;
+            return workDir_;
         }
 
         public string getOutputDir()
@@ -66,6 +64,7 @@ namespace fb2mobi
             bookname_   = "";
             outputdir_  = "";
             inputFile_  = Path.GetFullPath(arguments_[0]);
+            workDir_    = "";
 
             if (!File.Exists(inputFile_))
                 return;
@@ -95,8 +94,8 @@ namespace fb2mobi
                 }
                 catch (Exception)
                 {
-                    bookname = "";
-                    outputFileDir = "";
+                    outputFileDir   = inputFileDir;
+                    bookname        = "";
                 }
             }
 
@@ -132,12 +131,38 @@ namespace fb2mobi
             if (bookname.Length == 0)
                 bookname = "fb2mobi";
 
-            
+            char[] trimchars = { '\\' };
+            outputFileDir = outputFileDir.TrimEnd(trimchars);
+            inputFileDir = inputFileDir.TrimEnd(trimchars);
+
             bool ok = prepareOutputFilePlace(outputFileDir, bookname);
             if(!ok && outputFileDir != inputFileDir)
                 ok = prepareOutputFilePlace(inputFileDir, bookname);
             if(!ok)
                 ok = prepareOutputFilePlace(Path.GetTempPath()+ "\\fb2mobi", bookname);
+
+            if (ok)
+            {
+                if (arguments_["cl"] == "true")
+                {
+                    string testdir = Path.GetTempPath() + "\\fb2mobi_";
+                    for (int cont = 0; ; ++cont)
+                    {
+                        workDir_ = testdir;
+                        workDir_ += cont.ToString();
+                        if (!File.Exists(workDir_) && !Directory.Exists(workDir_))
+                            break;
+                    }
+                }
+                else
+                {
+                    workDir_ = outputdir_;
+                    workDir_ += bookname_;
+                }
+
+                Directory.CreateDirectory(workDir_);
+                workDir_ += "\\";
+            }
 
             erorr_ = !ok;
         }
@@ -156,8 +181,6 @@ namespace fb2mobi
                     if (!File.Exists(testName + ".mobi") && !Directory.Exists(testName))
                         break;
                 }
-                
-                DirectoryInfo di = Directory.CreateDirectory(dir + "\\" + name);
 
                 bookname_ = name;
                 outputdir_ = dir + "\\";

@@ -22,17 +22,8 @@ namespace fb2mobi
         [STAThread]
         static void Main(string[] args)
         {
-            Console.WriteLine("FB2mobi v 2.0.0b Copyright (c) 2008-2011 Rakunov Alexander 2011-02-13");
+            Console.WriteLine("FB2mobi v 2.0.1b Copyright (c) 2008-2011 Rakunov Alexander 2011-02-13");
             Console.WriteLine("Project home: http://code.google.com/p/fb2mobi/\n");
-
-            string PathToExecute = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
-            if(PathToExecute.Trim().Length > 0)
-                Directory.SetCurrentDirectory(PathToExecute);
-            
-            if(!File.Exists(kindlegen)){
-                Console.WriteLine("File: \"" + kindlegen + "\" not found\n");
-                return;
-            }
 
             if(args.Length == 0){
                 print_usage();
@@ -59,13 +50,31 @@ namespace fb2mobi
 
 
             Worker sp = new Worker(CommandLine);
-
+            
             if (sp.error())
             {
                 print_usage();
                 return;
             }
+
             
+            // SET CURRENT DIR TO FB2MOBI EXECUTE DIR
+
+            
+            string PathToExecute = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+            if (PathToExecute.Trim().Length > 0)
+                Directory.SetCurrentDirectory(PathToExecute);
+
+            if (!File.Exists(kindlegen))
+            {
+                Console.WriteLine("File: \"" + kindlegen + "\" not found\n");
+                return;
+            }
+
+
+            // GET SOURCE FILES FOR KINGLEGEN FROM FB2
+
+
             try
             {
                 sp.saveImages();

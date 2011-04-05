@@ -22,7 +22,7 @@ namespace fb2mobi
         [STAThread]
         static void Main(string[] args)
         {
-            Console.WriteLine("FB2mobi v 2.0.1b Copyright (c) 2008-2011 Rakunov Alexander 2011-02-13");
+            Console.WriteLine("FB2mobi v 2.0.2 Copyright (c) 2008-2011 Rakunov Alexander 2011-04-05");
             Console.WriteLine("Project home: http://code.google.com/p/fb2mobi/\n");
 
             if(args.Length == 0){
@@ -98,8 +98,7 @@ namespace fb2mobi
             process.StartInfo.CreateNoWindow = true;
             process.StartInfo.FileName = kindlegen;
 
-            string KindleGenArguments = "-unicode -nomin";
-            KindleGenArguments += CommandLine["nc"] == "true" ? " -c0" : " -c2";
+            string KindleGenArguments = CommandLine["nc"] == "true" ? " -c0" : " -c2";
             KindleGenArguments += " \"" + sp.getWorkDir() + sp.getBookName(".opf") + "\"";
 
             process.StartInfo.Arguments = KindleGenArguments;

@@ -23,7 +23,7 @@ namespace fb2mobi
         [STAThread]
         static void Main(string[] args)
         {
-            Console.WriteLine("FB2mobi v 2.0.2 Copyright (c) 2008-2011 Rakunov Alexander 2011-04-05");
+            Console.WriteLine("FB2mobi v 2.0.3 Copyright (c) 2008-2011 Rakunov Alexander 2011-06-13");
             Console.WriteLine("Project home: http://code.google.com/p/fb2mobi/\n");
 
             if(args.Length == 0){

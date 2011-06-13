@@ -10,6 +10,7 @@ namespace fb2mobi
         private static string kindlegen = "kindlegen.exe";
         private static string opfxsl    = "FB2_2_opf.xsl";
         private static string bodyxsl   = "FB2_2_xhtml.xsl";
+        private static string ncxxsl    = "FB2_2_ncx.xsl";
 
         static void print_usage()
         {
@@ -80,6 +81,7 @@ namespace fb2mobi
                 sp.saveImages();
                 sp.transform(bodyxsl, "index.html");
                 sp.transform(opfxsl, sp.getBookName(".opf"));
+                sp.transform(ncxxsl, "book.ncx");
             }
             catch (Exception e)
             {

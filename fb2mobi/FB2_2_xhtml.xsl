@@ -33,7 +33,7 @@
 					<hr/>
 				</xsl:for-each>
 				<!-- BUILD TOC -->
-				<ul>
+				<ul id="TOC">
 					<xsl:apply-templates select="fb:body" mode="toc"/>
 				</ul>
 				<hr/>
@@ -42,6 +42,7 @@
 					<xsl:if test="position()!=1">
 						<hr/>
 					</xsl:if>
+					<a name="TOC_{generate-id()}"></a>
 					<xsl:if test="@name">
 						<h4 align="center">
 							<xsl:value-of select="@name"/>
@@ -87,7 +88,14 @@
 			</xsl:when>
 			<xsl:otherwise>
 				<li>
-					<a href="#TOC_{generate-id()}"><xsl:value-of select="normalize-space(fb:title/fb:p[1] | @name)"/></a>
+					<xsl:choose>
+						<xsl:when test="name()='body' and position()=1">
+							<xsl:value-of select="normalize-space(fb:title/fb:p[1] | @name)"/>
+						</xsl:when>
+						<xsl:otherwise>
+							<a href="#TOC_{generate-id()}"><xsl:value-of select="normalize-space(fb:title/fb:p[1] | @name)"/></a>
+						</xsl:otherwise>
+					</xsl:choose>
 					<xsl:if test="fb:section">
 						<ul><xsl:apply-templates select="fb:section" mode="toc"/></ul>
 					</xsl:if>
@@ -99,9 +107,12 @@
 	<xsl:template match="fb:description">
 		<xsl:apply-templates/>
 	</xsl:template>
+	
 	<!-- body -->
 	<xsl:template match="fb:body">
-		<div><xsl:apply-templates/></div>
+		<div id="TOC_{generate-id()}">
+			<xsl:apply-templates/>
+		</div>
 	</xsl:template>
 
 	<xsl:template match="fb:section">

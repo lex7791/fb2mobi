@@ -5,6 +5,7 @@
 	<xsl:param name="tocdepth" select="3"/>
 	<xsl:param name="NotesTitle" select="'Сноски'"/>
 	<xsl:param name="src-name" select="'index.html'"/>
+	<xsl:param name="ncx-name" select="'book.ncx'"/>
 	<xsl:variable name="CoverID">
 		<xsl:choose>
 			<xsl:when test="starts-with(//fb:title-info/fb:coverpage/fb:image[1]/@xlink:href,'#')">
@@ -68,8 +69,9 @@
 				<xsl:if test="$saveimages &gt; 0">
 					<xsl:apply-templates select="//fb:binary"/>
 				</xsl:if>
+				<item id="My_Table_of_Contents" media-type="application/x-dtbncx+xml" href="{$ncx-name}"/>
 			</manifest>
-	      <spine>
+	      <spine toc="My_Table_of_Contents">
 	            <itemref idref="content" />
 	      </spine>
 	      <xsl:if test="($tocdepth &gt; 0 and count(//fb:body[not(@name) or @name != 'notes']//fb:title) &gt; 1) and (//fb:title-info/fb:coverpage/fb:image and $saveimages &gt; 0)">

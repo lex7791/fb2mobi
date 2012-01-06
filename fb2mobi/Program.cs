@@ -17,33 +17,60 @@ namespace fb2mobi
             Console.WriteLine("Usage: fb2mobi <file.fb2> [<output.mobi>] [{-,/,--}param]");
             Console.WriteLine("  -nc \t No compress output file. Increase speed and size :-)");
             Console.WriteLine("  -cl \t Clean output dir after convert.");
+            Console.WriteLine("  -v0 \t Suppress verbose.");
+            Console.WriteLine("  -v1 \t Suppress verbose. Only output file name.");
             Worker.print_usage();
         }
 
-        [STAThread]
-        static void Main(string[] args)
+        static void print_copyright()
         {
-            Console.WriteLine("FB2mobi v 2.0.3 Copyright (c) 2008-2011 Rakunov Alexander 2011-06-13");
+            Console.WriteLine("FB2mobi v 2.0.4 Copyright (c) 2008-2012 Rakunov Alexander 2012-01-07");
             Console.WriteLine("Project home: http://code.google.com/p/fb2mobi/\n");
+        }
+
+        [STAThread]
+        static int Main(string[] args)
+        {
 
             if(args.Length == 0){
+                print_copyright();
                 print_usage();
-                return;
+                return 1;
             }
             Arguments CommandLine = new Arguments(args);
+
+            bool verbose = (CommandLine["v0"] == "" && CommandLine["v1"] == "");
+
+            if (verbose)
+                print_copyright();
 
             if (CommandLine["?"] == "true" || CommandLine["help"] == "true" || CommandLine["h"] == "true")
             {
                 print_usage();
-                return;
+                return 0;
             }
 
             string filename = CommandLine[0];
             if (!File.Exists(filename))
             {
-                Console.WriteLine("File: \"" + filename + "\" not found\n");
-                print_usage();
-                return;
+                Console.Error.WriteLine("File: \"" + filename + "\" not found\n");
+                if (verbose)
+                    print_usage();
+                return 1;
+            }
+
+
+            // SET CURRENT DIR TO FB2MOBI EXECUTE DIR
+
+
+            string PathToExecute = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+            if (PathToExecute.Trim().Length > 0)
+                Directory.SetCurrentDirectory(PathToExecute);
+
+            if (!File.Exists(kindlegen))
+            {
+                Console.Error.WriteLine("File: \"" + kindlegen + "\" not found\n");
+                return 1;
             }
 
 
@@ -54,22 +81,10 @@ namespace fb2mobi
             
             if (sp.error())
             {
-                print_usage();
-                return;
-            }
-
-            
-            // SET CURRENT DIR TO FB2MOBI EXECUTE DIR
-
-            
-            string PathToExecute = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
-            if (PathToExecute.Trim().Length > 0)
-                Directory.SetCurrentDirectory(PathToExecute);
-
-            if (!File.Exists(kindlegen))
-            {
-                Console.WriteLine("File: \"" + kindlegen + "\" not found\n");
-                return;
+                Console.Error.WriteLine("Init error.\n");
+                if (verbose)
+                    print_usage();
+                return 1;
             }
 
 
@@ -85,8 +100,8 @@ namespace fb2mobi
             }
             catch (Exception e)
             {
-                Console.WriteLine("error occured: " + e.Message);
-                return;
+                Console.Error.WriteLine("error occured: " + e.Message);
+                return 1;
             }
 
 
@@ -109,13 +124,14 @@ namespace fb2mobi
 
             string str;
             while ((str = process.StandardOutput.ReadLine()) != null)
-                if (str.Length > 0)
+                if (verbose && str.Length > 0)
                     Console.WriteLine(str);
 
             process.Close();
 
             // CLEAN AND PUBLISH
-            Console.WriteLine("");
+            if (verbose)
+                Console.WriteLine("");
 
             string bookname = sp.getBookName(".mobi");
             if (File.Exists(sp.getWorkDir() + bookname))
@@ -130,21 +146,29 @@ namespace fb2mobi
                     }
                     catch (Exception) { }
                 }
-                else
+                else if(verbose)
                     Console.WriteLine("Output: " + sp.getWorkDir());
 
-                Console.WriteLine("Book: " + sp.getOutputDir() + bookname);
+                if(verbose)
+                    Console.WriteLine("Book: " + sp.getOutputDir() + bookname);
+                else if(CommandLine["v1"] == "true")
+                    Console.WriteLine(sp.getOutputDir() + bookname);
+                
+                return 0;
 
             }
             else
             {
-                Console.WriteLine("The output file is missing.");
+                if(verbose)
+                    Console.WriteLine("The output file is missing.");
                 try
                 {
                     Directory.Delete(sp.getWorkDir(), true);
                 }
                 catch (Exception) { }
             }
+            
+            return 1;
         }
     }
 }

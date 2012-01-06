@@ -10,7 +10,7 @@ namespace fb2mobi
 {
     class Worker
     {
-        bool erorr_;
+        bool error_;
 
         Arguments arguments_;
         
@@ -27,7 +27,7 @@ namespace fb2mobi
 
         public bool error()
         {
-            return erorr_;
+            return error_;
         }
 
         public string getBookName(string ext)
@@ -57,7 +57,7 @@ namespace fb2mobi
 
         public Worker(Arguments args)
         {
-            erorr_      = true;
+            error_      = true;
             
             arguments_  = args;
            
@@ -164,7 +164,7 @@ namespace fb2mobi
                 workDir_ += "\\";
             }
 
-            erorr_ = !ok;
+            error_ = !ok;
         }
 
 
